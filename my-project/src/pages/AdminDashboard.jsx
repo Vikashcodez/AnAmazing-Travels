@@ -83,6 +83,46 @@ const vlogAPI = {
   }
 };
 
+// Location API functions
+const locationAPI = {
+  getAllLocations: async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/destinations');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching locations:', error);
+      return { success: false, data: [] };
+    }
+  },
+  createLocation: async (formData) => {
+    try {
+      const response = await axios.post('http://localhost:5000/api/destinations', formData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating location:', error);
+      return { success: false };
+    }
+  },
+  updateLocation: async (id, formData) => {
+    try {
+      const response = await axios.put(`http://localhost:5000/api/destinations/${id}`, formData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating location:', error);
+      return { success: false };
+    }
+  },
+  deleteLocation: async (id) => {
+    try {
+      const response = await axios.delete(`http://localhost:5000/api/destinations/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting location:', error);
+      return { success: false };
+    }
+  }
+};
+
 // Enquiry API functions
 const enquiryAPI = {
   getAllEnquiries: async () => {
@@ -705,7 +745,7 @@ const VlogForm = ({ vlog: editVlog, onSubmit, onCancel }) => {
           </div>
         </div>
 
-        <div className="flex items-center">
+        <div className="flex items-center">kllllo
           <input
             type="checkbox"
             name="isFeatured"
@@ -735,6 +775,221 @@ const VlogForm = ({ vlog: editVlog, onSubmit, onCancel }) => {
           >
             <Save size={16} />
             {loading ? 'Saving...' : 'Save Vlog'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Location Form Component
+const LocationForm = ({ location: editLocation, onSubmit, onCancel }) => {
+  const [formData, setFormData] = useState({
+    destinationName: '',
+    description: '',
+    category: '',
+    thumbnail: null
+  });
+  const [thumbnailPreview, setThumbnailPreview] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const categories = [
+    { value: 'south-andaman', label: 'South Andaman' },
+    { value: 'north-andaman', label: 'North Andaman' },
+    { value: 'middle-andaman', label: 'Middle Andaman' }
+  ];
+
+  useEffect(() => {
+    if (editLocation) {
+      setFormData({
+        destinationName: editLocation.destinationName || '',
+        description: editLocation.description || '',
+        category: editLocation.category || '',
+        thumbnail: null
+      });
+      setThumbnailPreview(editLocation.thumbnailUrl || '');
+    }
+  }, [editLocation]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData(prev => ({
+        ...prev,
+        thumbnail: file
+      }));
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setThumbnailPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.destinationName || !formData.description || !formData.category) {
+      alert('Please fill in all required fields');
+      return;
+    }
+    
+    if (!editLocation && !formData.thumbnail) {
+      alert('Please select a thumbnail image');
+      return;
+    }
+    
+    setLoading(true);
+
+    const formDataToSend = new FormData();
+    formDataToSend.append('destinationName', formData.destinationName);
+    formDataToSend.append('description', formData.description);
+    formDataToSend.append('category', formData.category);
+    
+    if (formData.thumbnail) {
+      formDataToSend.append('thumbnail', formData.thumbnail);
+    }
+
+    try {
+      await onSubmit(formDataToSend);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-white p-6 rounded-lg shadow-lg max-w-4xl mx-auto">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-800">
+          {editLocation ? 'Edit Location' : 'Add New Location'}
+        </h2>
+        <button
+          onClick={onCancel}
+          className="p-2 text-gray-500 hover:text-gray-700"
+        >
+          <X size={24} />
+        </button>
+      </div>
+
+      <div className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Destination Name *
+          </label>
+          <input
+            type="text"
+            name="destinationName"
+            value={formData.destinationName}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Category *
+          </label>
+          <select
+            name="category"
+            value={formData.category}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          >
+            <option value="">Select Category</option>
+            {categories.map(cat => (
+              <option key={cat.value} value={cat.value}>
+                {cat.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Destination Thumbnail *
+          </label>
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+            {thumbnailPreview ? (
+              <div className="relative">
+                <img
+                  src={thumbnailPreview}
+                  alt="Preview"
+                  className="w-full h-48 object-cover rounded-lg"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setThumbnailPreview('');
+                    setFormData(prev => ({ ...prev, thumbnail: null }));
+                  }}
+                  className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ) : (
+              <div className="text-center">
+                <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <label className="cursor-pointer">
+                  <span className="text-blue-600 hover:text-blue-500">
+                    Upload thumbnail image
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    required={!editLocation}
+                  />
+                </label>
+                <p className="text-gray-500 text-sm mt-2">
+                  PNG, JPG, GIF up to 10MB
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Description *
+          </label>
+          <textarea
+            name="description"
+            value={formData.description}
+            onChange={handleInputChange}
+            rows={4}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        <div className="flex justify-end space-x-4">
+          <button
+            onClick={onCancel}
+            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 flex items-center gap-2"
+          >
+            <Save size={16} />
+            {loading ? 'Saving...' : editLocation ? 'Update Location' : 'Add Location'}
           </button>
         </div>
       </div>
@@ -938,6 +1193,111 @@ const PackageList = ({ packages, onEdit, onDelete }) => {
             <h3 className="text-lg font-bold mb-4">Confirm Delete</h3>
             <p className="text-gray-600 mb-6">
               Are you sure you want to delete this package? This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Location List Component
+const LocationList = ({ locations, onEdit, onDelete }) => {
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteLocationId, setDeleteLocationId] = useState(null);
+
+  const handleDeleteClick = (id) => {
+    setDeleteLocationId(id);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = () => {
+    if (deleteLocationId) {
+      onDelete(deleteLocationId);
+      setShowDeleteModal(false);
+      setDeleteLocationId(null);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-lg">
+      <div className="p-6 border-b">
+        <h2 className="text-2xl font-bold text-gray-800">All Locations ({locations.length})</h2>
+      </div>
+
+      <div className="p-6">
+        {locations.length === 0 ? (
+          <div className="text-center py-8">
+            <Eye size={48} className="mx-auto text-gray-400 mb-4" />
+            <p className="text-gray-500">No locations found. Add your first location!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {locations.map((location) => (
+              <div key={location._id} className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="w-full h-48 bg-gray-100 flex items-center justify-center overflow-hidden">
+                  {location.thumbnailUrl ? (
+                    <img
+  src={`http://localhost:5000${location.thumbnailUrl}`}
+  alt={location.destinationName}
+  className="w-full h-full object-cover"
+/>
+
+                  ) : (
+                    <Eye size={48} className="text-gray-400" />
+                  )}
+                </div>
+                <div className="p-4">
+                  <h3 className="font-bold text-lg mb-2">{location.destinationName}</h3>
+                  <p className="text-sm text-blue-600 mb-2 capitalize">
+                    {location.category.replace('-', ' ')}
+                  </p>
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                    {location.description}
+                  </p>
+                  <div className="flex justify-between">
+                    <button
+                      onClick={() => onEdit(location)}
+                      className="flex items-center gap-1 px-3 py-1 text-blue-600 hover:bg-blue-50 rounded"
+                    >
+                      <Edit2 size={16} />
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteClick(location._id)}
+                      className="flex items-center gap-1 px-3 py-1 text-red-600 hover:bg-red-50 rounded"
+                    >
+                      <Trash2 size={16} />
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+            <h3 className="text-lg font-bold mb-4">Confirm Delete</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this location? This action cannot be undone.
             </p>
             <div className="flex justify-end space-x-4">
               <button
@@ -1274,6 +1634,11 @@ const AdminDashboard = () => {
   const [editingVlog, setEditingVlog] = useState(null);
   const [vlogLoading, setVlogLoading] = useState(false);
 
+  // Location management state
+  const [locations, setLocations] = useState([]);
+  const [editingLocation, setEditingLocation] = useState(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+
   // Enquiry management state
   const [enquiries, setEnquiries] = useState([]);
   const [enquiryLoading, setEnquiryLoading] = useState(false);
@@ -1432,6 +1797,69 @@ const AdminDashboard = () => {
     }
   };
 
+  // Location management functions
+  const loadLocations = async () => {
+    setLocationLoading(true);
+    try {
+      const response = await locationAPI.getAllLocations();
+      if (response.success) {
+        setLocations(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading locations:', error);
+    } finally {
+      setLocationLoading(false);
+    }
+  };
+
+  const handleAddLocation = async (formData) => {
+    try {
+      const response = await locationAPI.createLocation(formData);
+      if (response.success) {
+        await loadLocations();
+        setCurrentView('locations-list');
+        alert('Location added successfully!');
+      } else {
+        alert('Error adding location. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error adding location:', error);
+      alert('Error adding location. Please try again.');
+    }
+  };
+
+  const handleEditLocation = async (formData) => {
+    try {
+      const response = await locationAPI.updateLocation(editingLocation._id, formData);
+      if (response.success) {
+        await loadLocations();
+        setCurrentView('locations-list');
+        setEditingLocation(null);
+        alert('Location updated successfully!');
+      } else {
+        alert('Error updating location. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error updating location:', error);
+      alert('Error updating location. Please try again.');
+    }
+  };
+
+  const handleDeleteLocation = async (id) => {
+    try {
+      const response = await locationAPI.deleteLocation(id);
+      if (response.success) {
+        await loadLocations();
+        alert('Location deleted successfully!');
+      } else {
+        alert('Error deleting location. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error deleting location:', error);
+      alert('Error deleting location. Please try again.');
+    }
+  };
+
   // Enquiry management functions
  const loadEnquiries = async () => {
   setEnquiryLoading(true);
@@ -1533,9 +1961,19 @@ const AdminDashboard = () => {
     loadPackages();
   };
 
+  const handleShowLocations = () => {
+    setCurrentView('locations-list');
+    loadLocations();
+  };
+
   const handleEditClick = (packageItem) => {
     setEditingPackage(packageItem);
     setCurrentView('packages-edit');
+  };
+
+  const handleEditLocationClick = (location) => {
+    setEditingLocation(location);
+    setCurrentView('locations-edit');
   };
 
   return (
@@ -1555,7 +1993,7 @@ const AdminDashboard = () => {
                     Welcome, {user?.name}!
                   </h2>
                   <p className="text-gray-600 mb-6">
-                    You have admin access to manage users, packages, vlogs, enquiries, bookings and system settings.
+                    You have admin access to manage users, packages, vlogs, locations, enquiries, bookings and system settings.
                   </p>
                 </div>
 
@@ -1624,6 +2062,31 @@ const AdminDashboard = () => {
                       >
                         <Eye size={16} />
                         View Vlogs
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Location Management Card */}
+                  <div className="bg-yellow-50 p-6 rounded-lg border border-yellow-200">
+                    <div className="flex items-center mb-4">
+                      <Eye size={24} className="text-yellow-600 mr-3" />
+                      <h3 className="text-lg font-semibold text-gray-800">Location Management</h3>
+                    </div>
+                    <p className="text-gray-600 mb-4">Add, edit, and manage popular destinations</p>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => setCurrentView('locations-add')}
+                        className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded transition-colors flex items-center gap-2 justify-center"
+                      >
+                        <Plus size={16} />
+                        Add Location
+                      </button>
+                      <button
+                        onClick={handleShowLocations}
+                        className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded transition-colors flex items-center gap-2 justify-center"
+                      >
+                        <Eye size={16} />
+                        View Locations
                       </button>
                     </div>
                   </div>
@@ -1804,6 +2267,38 @@ const AdminDashboard = () => {
                     vlogs={vlogs}
                     onEdit={handleEditVlogClick}
                     onDelete={handleDeleteVlog}
+                  />
+                )}
+              </>
+            )}
+
+            {/* Location Views */}
+            {locationLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="text-xl text-gray-600">Loading locations...</div>
+              </div>
+            ) : (
+              <>
+                {currentView === 'locations-add' && (
+                  <LocationForm
+                    onSubmit={handleAddLocation}
+                    onCancel={() => setCurrentView('dashboard')}
+                  />
+                )}
+
+                {currentView === 'locations-edit' && (
+                  <LocationForm
+                    location={editingLocation}
+                    onSubmit={handleEditLocation}
+                    onCancel={() => setCurrentView('locations-list')}
+                  />
+                )}
+
+                {currentView === 'locations-list' && (
+                  <LocationList
+                    locations={locations}
+                    onEdit={handleEditLocationClick}
+                    onDelete={handleDeleteLocation}
                   />
                 )}
               </>
