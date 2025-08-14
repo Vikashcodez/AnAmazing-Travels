@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Plus, Edit2, Trash2, Eye, Package, Save, X, Upload, Bold, Italic, List, Users, Video, Calendar } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, Package, Save, X, Upload, Bold, Italic, List, Users, Video, Calendar, MapPin, Star, Bed, Wind } from 'lucide-react';
 import axios from 'axios';
 
 // Mock API functions for packages
@@ -274,6 +274,55 @@ const bookingAPI = {
     } catch (error) {
       console.error('Error deleting booking:', error);
       throw error;
+    }
+  }
+};
+
+// Hotel API functions
+const hotelAPI = {
+  getAllHotels: async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/hotels');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching hotels:', error);
+      return { success: false, data: [] };
+    }
+  },
+  createHotel: async (formData) => {
+    try {
+      const response = await axios.post('http://localhost:5000/api/hotels', formData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating hotel:', error);
+      return { success: false };
+    }
+  },
+  updateHotel: async (id, formData) => {
+    try {
+      const response = await axios.put(`http://localhost:5000/api/hotels/${id}`, formData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating hotel:', error);
+      return { success: false };
+    }
+  },
+  deleteHotel: async (id) => {
+    try {
+      const response = await axios.delete(`http://localhost:5000/api/hotels/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting hotel:', error);
+      return { success: false };
+    }
+  },
+  deleteRoom: async (hotelId, roomId) => {
+    try {
+      const response = await axios.delete(`http://localhost:5000/api/hotels/${hotelId}/rooms/${roomId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting room:', error);
+      return { success: false };
     }
   }
 };
@@ -745,7 +794,7 @@ const VlogForm = ({ vlog: editVlog, onSubmit, onCancel }) => {
           </div>
         </div>
 
-        <div className="flex items-center">kllllo
+        <div className="flex items-center">
           <input
             type="checkbox"
             name="isFeatured"
@@ -992,6 +1041,719 @@ const LocationForm = ({ location: editLocation, onSubmit, onCancel }) => {
             {loading ? 'Saving...' : editLocation ? 'Update Location' : 'Add Location'}
           </button>
         </div>
+      </div>
+    </div>
+  );
+};
+
+// Hotel Form Component
+const HotelForm = ({ hotel: editHotel, onSubmit, onCancel }) => {
+  const [formData, setFormData] = useState({
+    hotelName: '',
+    hotelLocation: '',
+    locationLink: '',
+    hotelAddress: '',
+    description: '',
+    hotelImage: null,
+    rooms: []
+  });
+
+  const [roomForm, setRoomForm] = useState({
+    roomType: 'normal',
+    bedType: 'single',
+    acType: 'AC',
+    price: '',
+    images: []
+  });
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState({ type: '', text: '' });
+
+  useEffect(() => {
+    if (editHotel) {
+      setFormData({
+        hotelName: editHotel.hotelName || '',
+        hotelLocation: editHotel.hotelLocation || '',
+        locationLink: editHotel.locationLink || '',
+        hotelAddress: editHotel.hotelAddress || '',
+        description: editHotel.description || '',
+        hotelImage: null,
+        rooms: editHotel.rooms || []
+      });
+    }
+  }, [editHotel]);
+
+  const showMessage = (type, text) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+  };
+
+  const handleHotelFormChange = (e) => {
+    const { name, value, type, files } = e.target;
+    if (type === 'file') {
+      setFormData(prev => ({ ...prev, [name]: files[0] }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleRoomFormChange = (e) => {
+    const { name, value, type, files } = e.target;
+    if (type === 'file') {
+      setRoomForm(prev => ({ ...prev, [name]: Array.from(files) }));
+    } else {
+      setRoomForm(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const addRoomToForm = () => {
+    if (!roomForm.price || roomForm.images.length < 3) {
+      showMessage('error', 'Please fill all room details and upload minimum 3 images');
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      rooms: [...prev.rooms, { ...roomForm }]
+    }));
+
+    setRoomForm({
+      roomType: 'normal',
+      bedType: 'single',
+      acType: 'AC',
+      price: '',
+      images: []
+    });
+    showMessage('success', 'Room added to hotel form');
+  };
+
+  const removeRoomFromForm = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      rooms: prev.rooms.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!formData.hotelName || !formData.hotelLocation || !formData.locationLink || 
+        !formData.hotelAddress || !formData.description) {
+      showMessage('error', 'Please fill all hotel details');
+      return;
+    }
+
+    if (!editHotel && !formData.hotelImage) {
+      showMessage('error', 'Please upload hotel image');
+      return;
+    }
+
+    if (formData.rooms.length === 0) {
+      showMessage('error', 'Please add at least one room');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('hotelName', formData.hotelName);
+      formDataToSend.append('hotelLocation', formData.hotelLocation);
+      formDataToSend.append('locationLink', formData.locationLink);
+      formDataToSend.append('hotelAddress', formData.hotelAddress);
+      formDataToSend.append('description', formData.description);
+      
+      if (formData.hotelImage) {
+        formDataToSend.append('hotelImage', formData.hotelImage);
+      }
+
+      formDataToSend.append('rooms', JSON.stringify(formData.rooms.map(room => ({
+        roomType: room.roomType,
+        bedType: room.bedType,
+        acType: room.acType,
+        price: Number(room.price)
+      }))));
+
+      // Add room images
+      formData.rooms.forEach(room => {
+        room.images.forEach(image => {
+          formDataToSend.append('roomImages', image);
+        });
+      });
+
+      await onSubmit(formDataToSend);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      showMessage('error', 'Error submitting form: ' + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold text-gray-800">
+            {editHotel ? 'Edit Hotel' : 'Add New Hotel'}
+          </h1>
+          <button
+            onClick={onCancel}
+            className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+          >
+            Back
+          </button>
+        </div>
+
+        {message.text && (
+          <div className={`mb-6 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
+            {message.text}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Hotel Information</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Hotel Name *</label>
+                <input
+                  type="text"
+                  name="hotelName"
+                  value={formData.hotelName}
+                  onChange={handleHotelFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Hotel Location *</label>
+                <input
+                  type="text"
+                  name="hotelLocation"
+                  value={formData.hotelLocation}
+                  onChange={handleHotelFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Location Link *</label>
+                <input
+                  type="url"
+                  name="locationLink"
+                  value={formData.locationLink}
+                  onChange={handleHotelFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {editHotel ? 'Hotel Image (Leave blank to keep current)' : 'Hotel Image *'}
+                </label>
+                <input
+                  type="file"
+                  name="hotelImage"
+                  accept="image/*"
+                  onChange={handleHotelFormChange}
+                  required={!editHotel}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Hotel Address *</label>
+                <input
+                  type="text"
+                  name="hotelAddress"
+                  value={formData.hotelAddress}
+                  onChange={handleHotelFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleHotelFormChange}
+                  required
+                  rows="4"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Add Room</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Room Type</label>
+                <select
+                  name="roomType"
+                  value={roomForm.roomType}
+                  onChange={handleRoomFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="normal">Normal</option>
+                  <option value="deluxe">Deluxe</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bed Type</label>
+                <select
+                  name="bedType"
+                  value={roomForm.bedType}
+                  onChange={handleRoomFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="single">Single</option>
+                  <option value="double">Double</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">AC Type</label>
+                <select
+                  name="acType"
+                  value={roomForm.acType}
+                  onChange={handleRoomFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="AC">AC</option>
+                  <option value="Non-AC">Non-AC</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Price (₹) *</label>
+                <input
+                  type="number"
+                  name="price"
+                  value={roomForm.price}
+                  onChange={handleRoomFormChange}
+                  min="0"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div className="md:col-span-2 lg:col-span-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Room Images (minimum 3) *</label>
+                <input
+                  type="file"
+                  name="images"
+                  accept="image/*"
+                  multiple
+                  onChange={handleRoomFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+            </div>
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={addRoomToForm}
+                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Add Room to Hotel
+              </button>
+            </div>
+          </div>
+
+          {formData.rooms.length > 0 && (
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">Added Rooms ({formData.rooms.length})</h2>
+              <div className="space-y-4">
+                {formData.rooms.map((room, index) => (
+                  <div key={index} className="border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-2">
+                        <Star className="h-4 w-4 text-yellow-500" />
+                        <span className="font-medium capitalize">{room.roomType}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Bed className="h-4 w-4 text-blue-500" />
+                        <span className="capitalize">{room.bedType}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Wind className="h-4 w-4 text-green-500" />
+                        <span>{room.acType}</span>
+                      </div>
+                      <div className="font-bold text-green-600">₹{room.price}</div>
+                      <div className="text-sm text-gray-500">{room.images.length} images</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeRoomFromForm(index)}
+                      className="text-red-500 hover:text-red-700 p-2"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-center">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
+            >
+              {isLoading ? (editHotel ? 'Updating Hotel...' : 'Creating Hotel...') : (editHotel ? 'Update Hotel' : 'Submit Hotel')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// Hotel List Component
+const HotelList = ({ hotels, onEdit, onDelete, onViewRooms }) => {
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteHotelId, setDeleteHotelId] = useState(null);
+
+  const handleDeleteClick = (id) => {
+    setDeleteHotelId(id);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = () => {
+    if (deleteHotelId) {
+      onDelete(deleteHotelId);
+      setShowDeleteModal(false);
+      setDeleteHotelId(null);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-lg">
+      <div className="p-6 border-b">
+        <h2 className="text-2xl font-bold text-gray-800">All Hotels ({hotels.length})</h2>
+      </div>
+
+      <div className="p-6">
+        {hotels.length === 0 ? (
+          <div className="text-center py-8">
+            <MapPin size={48} className="mx-auto text-gray-400 mb-4" />
+            <p className="text-gray-500">No hotels found. Add your first hotel!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {hotels.map((hotel) => (
+              <div key={hotel._id} className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="w-full h-48 bg-gray-100 flex items-center justify-center overflow-hidden">
+                  {hotel.hotelImage ? (
+                    <img
+                      src={`http://localhost:5000/uploads/${hotel.hotelImage}`}
+                      alt={hotel.hotelName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <MapPin size={48} className="text-gray-400" />
+                  )}
+                </div>
+                <div className="p-4">
+                  <h3 className="font-bold text-lg mb-2">{hotel.hotelName}</h3>
+                  <div className="flex items-center text-gray-600 mb-2">
+                    <MapPin className="h-4 w-4 mr-2" />
+                    <span className="text-sm">{hotel.hotelLocation}</span>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-3">{hotel.description}</p>
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="text-sm text-gray-500">
+                      {hotel.rooms.length} rooms
+                    </div>
+                  </div>
+                  <div className="flex justify-between">
+                    <button
+                      onClick={() => onEdit(hotel)}
+                      className="flex items-center gap-1 px-3 py-1 text-blue-600 hover:bg-blue-50 rounded"
+                    >
+                      <Edit2 size={16} />
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => onViewRooms(hotel)}
+                      className="flex items-center gap-1 px-3 py-1 text-green-600 hover:bg-green-50 rounded"
+                    >
+                      <Eye size={16} />
+                      View Rooms
+                    </button>
+                    <button
+                      onClick={() => handleDeleteClick(hotel._id)}
+                      className="flex items-center gap-1 px-3 py-1 text-red-600 hover:bg-red-50 rounded"
+                    >
+                      <Trash2 size={16} />
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+            <h3 className="text-lg font-bold mb-4">Confirm Delete</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this hotel? This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Hotel Rooms Component
+const HotelRooms = ({ hotel, onDeleteRoom, onAddRoom, onBack }) => {
+  const [roomForm, setRoomForm] = useState({
+    roomType: 'normal',
+    bedType: 'single',
+    acType: 'AC',
+    price: '',
+    images: []
+  });
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState({ type: '', text: '' });
+
+  const showMessage = (type, text) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+  };
+
+  const handleRoomFormChange = (e) => {
+    const { name, value, type, files } = e.target;
+    if (type === 'file') {
+      setRoomForm(prev => ({ ...prev, [name]: Array.from(files) }));
+    } else {
+      setRoomForm(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleAddRoom = async () => {
+    if (!roomForm.price || roomForm.images.length < 3) {
+      showMessage('error', 'Please fill all room details and upload minimum 3 images');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('roomType', roomForm.roomType);
+      formData.append('bedType', roomForm.bedType);
+      formData.append('acType', roomForm.acType);
+      formData.append('price', roomForm.price);
+      
+      roomForm.images.forEach(image => {
+        formData.append('roomImages', image);
+      });
+
+      await onAddRoom(hotel._id, formData);
+      
+      setRoomForm({
+        roomType: 'normal',
+        bedType: 'single',
+        acType: 'AC',
+        price: '',
+        images: []
+      });
+      
+      showMessage('success', 'Room added successfully');
+    } catch (error) {
+      console.error('Error adding room:', error);
+      showMessage('error', 'Error adding room: ' + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteRoom = async (roomId) => {
+    if (!window.confirm('Are you sure you want to delete this room?')) return;
+    
+    try {
+      await onDeleteRoom(hotel._id, roomId);
+      showMessage('success', 'Room deleted successfully');
+    } catch (error) {
+      console.error('Error deleting room:', error);
+      showMessage('error', 'Error deleting room: ' + error.message);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-lg">
+      <div className="p-6 border-b">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold text-gray-800">
+            {hotel.hotelName} - Rooms ({hotel.rooms.length})
+          </h2>
+          <button
+            onClick={onBack}
+            className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+          >
+            Back to Hotels
+          </button>
+        </div>
+      </div>
+
+      <div className="p-6">
+        {message.text && (
+          <div className={`mb-6 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
+            {message.text}
+          </div>
+        )}
+
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Add New Room</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Room Type</label>
+              <select
+                name="roomType"
+                value={roomForm.roomType}
+                onChange={handleRoomFormChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="normal">Normal</option>
+                <option value="deluxe">Deluxe</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Bed Type</label>
+              <select
+                name="bedType"
+                value={roomForm.bedType}
+                onChange={handleRoomFormChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="single">Single</option>
+                <option value="double">Double</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">AC Type</label>
+              <select
+                name="acType"
+                value={roomForm.acType}
+                onChange={handleRoomFormChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="AC">AC</option>
+                <option value="Non-AC">Non-AC</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Price (₹) *</label>
+              <input
+                type="number"
+                name="price"
+                value={roomForm.price}
+                onChange={handleRoomFormChange}
+                min="0"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+            <div className="md:col-span-2 lg:col-span-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Room Images (minimum 3) *</label>
+              <input
+                type="file"
+                name="images"
+                accept="image/*"
+                multiple
+                onChange={handleRoomFormChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+          </div>
+          <div className="mt-4">
+            <button
+              onClick={handleAddRoom}
+              disabled={isLoading}
+              className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50"
+            >
+              {isLoading ? 'Adding Room...' : 'Add Room'}
+            </button>
+          </div>
+        </div>
+
+        {hotel.rooms.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {hotel.rooms.map((room) => (
+              <div key={room._id} className="border rounded-lg overflow-hidden">
+                <div className="w-full h-48 bg-gray-100 flex items-center justify-center overflow-hidden">
+                  {room.images && room.images.length > 0 ? (
+                    <img
+                      src={`http://localhost:5000/uploads/${room.images[0]}`}
+                      alt={`Room ${room.roomType}`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Bed size={48} className="text-gray-400" />
+                  )}
+                </div>
+                <div className="p-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="flex items-center space-x-2">
+                      <Star className="h-4 w-4 text-yellow-500" />
+                      <span className="font-medium capitalize">{room.roomType}</span>
+                    </div>
+                    <div className="font-bold text-green-600">₹{room.price}</div>
+                  </div>
+                  <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
+                    <div className="flex items-center space-x-1">
+                      <Bed className="h-4 w-4" />
+                      <span className="capitalize">{room.bedType}</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <Wind className="h-4 w-4" />
+                      <span>{room.acType}</span>
+                    </div>
+                  </div>
+                  <div className="text-sm text-gray-500 mb-3">
+                    {room.images?.length || 0} images
+                  </div>
+                  <button
+                    onClick={() => handleDeleteRoom(room._id)}
+                    className="w-full bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm font-medium flex items-center justify-center gap-1"
+                  >
+                    <Trash2 size={16} />
+                    Delete Room
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <Bed size={48} className="mx-auto text-gray-400 mb-4" />
+            <p className="text-gray-500">No rooms added yet. Add the first room above.</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1252,11 +2014,10 @@ const LocationList = ({ locations, onEdit, onDelete }) => {
                 <div className="w-full h-48 bg-gray-100 flex items-center justify-center overflow-hidden">
                   {location.thumbnailUrl ? (
                     <img
-  src={`http://localhost:5000${location.thumbnailUrl}`}
-  alt={location.destinationName}
-  className="w-full h-full object-cover"
-/>
-
+                      src={`http://localhost:5000${location.thumbnailUrl}`}
+                      alt={location.destinationName}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <Eye size={48} className="text-gray-400" />
                   )}
@@ -1639,6 +2400,12 @@ const AdminDashboard = () => {
   const [editingLocation, setEditingLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(false);
 
+  // Hotel management state
+  const [hotels, setHotels] = useState([]);
+  const [editingHotel, setEditingHotel] = useState(null);
+  const [selectedHotel, setSelectedHotel] = useState(null);
+  const [hotelLoading, setHotelLoading] = useState(false);
+
   // Enquiry management state
   const [enquiries, setEnquiries] = useState([]);
   const [enquiryLoading, setEnquiryLoading] = useState(false);
@@ -1860,6 +2627,105 @@ const AdminDashboard = () => {
     }
   };
 
+  // Hotel management functions
+  const loadHotels = async () => {
+    setHotelLoading(true);
+    try {
+      const response = await hotelAPI.getAllHotels();
+      if (response.success) {
+        setHotels(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading hotels:', error);
+    } finally {
+      setHotelLoading(false);
+    }
+  };
+
+  const handleAddHotel = async (formData) => {
+    try {
+      const response = await hotelAPI.createHotel(formData);
+      if (response.success) {
+        await loadHotels();
+        setCurrentView('hotels-list');
+        alert('Hotel added successfully!');
+      } else {
+        alert('Error adding hotel. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error adding hotel:', error);
+      alert('Error adding hotel. Please try again.');
+    }
+  };
+
+  const handleEditHotel = async (formData) => {
+    try {
+      const response = await hotelAPI.updateHotel(editingHotel._id, formData);
+      if (response.success) {
+        await loadHotels();
+        setCurrentView('hotels-list');
+        setEditingHotel(null);
+        alert('Hotel updated successfully!');
+      } else {
+        alert('Error updating hotel. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error updating hotel:', error);
+      alert('Error updating hotel. Please try again.');
+    }
+  };
+
+  const handleDeleteHotel = async (id) => {
+    try {
+      const response = await hotelAPI.deleteHotel(id);
+      if (response.success) {
+        await loadHotels();
+        alert('Hotel deleted successfully!');
+      } else {
+        alert('Error deleting hotel. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error deleting hotel:', error);
+      alert('Error deleting hotel. Please try again.');
+    }
+  };
+
+  const handleAddRoom = async (hotelId, formData) => {
+    try {
+      const response = await axios.post(`http://localhost:5000/api/hotels/${hotelId}/rooms`, formData);
+      if (response.data.success) {
+        await loadHotels();
+        // Update the selected hotel with the new room
+        setSelectedHotel(response.data.data);
+        alert('Room added successfully!');
+      } else {
+        alert('Error adding room. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error adding room:', error);
+      alert('Error adding room. Please try again.');
+    }
+  };
+
+  const handleDeleteRoom = async (hotelId, roomId) => {
+    try {
+      const response = await hotelAPI.deleteRoom(hotelId, roomId);
+      if (response.success) {
+        await loadHotels();
+        // Update the selected hotel if it's the one we're viewing
+        if (selectedHotel && selectedHotel._id === hotelId) {
+          setSelectedHotel(response.data);
+        }
+        alert('Room deleted successfully!');
+      } else {
+        alert('Error deleting room. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error deleting room:', error);
+      alert('Error deleting room. Please try again.');
+    }
+  };
+
   // Enquiry management functions
  const loadEnquiries = async () => {
   setEnquiryLoading(true);
@@ -1966,6 +2832,11 @@ const AdminDashboard = () => {
     loadLocations();
   };
 
+  const handleShowHotels = () => {
+    setCurrentView('hotels-list');
+    loadHotels();
+  };
+
   const handleEditClick = (packageItem) => {
     setEditingPackage(packageItem);
     setCurrentView('packages-edit');
@@ -1974,6 +2845,16 @@ const AdminDashboard = () => {
   const handleEditLocationClick = (location) => {
     setEditingLocation(location);
     setCurrentView('locations-edit');
+  };
+
+  const handleEditHotelClick = (hotel) => {
+    setEditingHotel(hotel);
+    setCurrentView('hotels-edit');
+  };
+
+  const handleViewHotelRooms = (hotel) => {
+    setSelectedHotel(hotel);
+    setCurrentView('hotel-rooms');
   };
 
   return (
@@ -1993,7 +2874,7 @@ const AdminDashboard = () => {
                     Welcome, {user?.name}!
                   </h2>
                   <p className="text-gray-600 mb-6">
-                    You have admin access to manage users, packages, vlogs, locations, enquiries, bookings and system settings.
+                    You have admin access to manage users, packages, vlogs, locations, hotels, enquiries, bookings and system settings.
                   </p>
                 </div>
 
@@ -2091,6 +2972,31 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
+                  {/* Hotel Management Card */}
+                  <div className="bg-indigo-50 p-6 rounded-lg border border-indigo-200">
+                    <div className="flex items-center mb-4">
+                      <MapPin size={24} className="text-indigo-600 mr-3" />
+                      <h3 className="text-lg font-semibold text-gray-800">Hotel Management</h3>
+                    </div>
+                    <p className="text-gray-600 mb-4">Add, edit, and manage hotels and rooms</p>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => setCurrentView('hotels-add')}
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition-colors flex items-center gap-2 justify-center"
+                      >
+                        <Plus size={16} />
+                        Add Hotel
+                      </button>
+                      <button
+                        onClick={handleShowHotels}
+                        className="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded transition-colors flex items-center gap-2 justify-center"
+                      >
+                        <Eye size={16} />
+                        View Hotels
+                      </button>
+                    </div>
+                  </div>
+
                   {/* Enquiry Management Card */}
                   <div className="bg-orange-50 p-6 rounded-lg border border-orange-200">
                     <div className="flex items-center mb-4">
@@ -2108,15 +3014,15 @@ const AdminDashboard = () => {
                   </div>
 
                   {/* Booking Management Card */}
-                  <div className="bg-indigo-50 p-6 rounded-lg border border-indigo-200">
+                  <div className="bg-pink-50 p-6 rounded-lg border border-pink-200">
                     <div className="flex items-center mb-4">
-                      <Calendar size={24} className="text-indigo-600 mr-3" />
+                      <Calendar size={24} className="text-pink-600 mr-3" />
                       <h3 className="text-lg font-semibold text-gray-800">Booking Management</h3>
                     </div>
                     <p className="text-gray-600 mb-4">View and manage all travel bookings</p>
                     <button
                       onClick={handleShowBookings}
-                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition-colors flex items-center gap-2 justify-center"
+                      className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded transition-colors flex items-center gap-2 justify-center"
                     >
                       <Eye size={16} />
                       View Bookings
@@ -2299,6 +3205,48 @@ const AdminDashboard = () => {
                     locations={locations}
                     onEdit={handleEditLocationClick}
                     onDelete={handleDeleteLocation}
+                  />
+                )}
+              </>
+            )}
+
+            {/* Hotel Views */}
+            {hotelLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="text-xl text-gray-600">Loading hotels...</div>
+              </div>
+            ) : (
+              <>
+                {currentView === 'hotels-add' && (
+                  <HotelForm
+                    onSubmit={handleAddHotel}
+                    onCancel={() => setCurrentView('dashboard')}
+                  />
+                )}
+
+                {currentView === 'hotels-edit' && (
+                  <HotelForm
+                    hotel={editingHotel}
+                    onSubmit={handleEditHotel}
+                    onCancel={() => setCurrentView('hotels-list')}
+                  />
+                )}
+
+                {currentView === 'hotels-list' && (
+                  <HotelList
+                    hotels={hotels}
+                    onEdit={handleEditHotelClick}
+                    onDelete={handleDeleteHotel}
+                    onViewRooms={handleViewHotelRooms}
+                  />
+                )}
+
+                {currentView === 'hotel-rooms' && selectedHotel && (
+                  <HotelRooms
+                    hotel={selectedHotel}
+                    onDeleteRoom={handleDeleteRoom}
+                    onAddRoom={handleAddRoom}
+                    onBack={() => setCurrentView('hotels-list')}
                   />
                 )}
               </>

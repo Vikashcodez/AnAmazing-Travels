@@ -53,10 +53,22 @@ const Navbar = () => {
                 Packages
               </Link>
               <Link 
+                to="/hotels" 
+                className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Hotels
+              </Link>
+              <Link 
                 to="/blog" 
                 className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
               >
                 Blogs
+              </Link>
+              <Link 
+                to="/gallery" 
+                className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Gallery
               </Link>
               <Link 
                 to="/about" 

@@ -1,3 +1,133 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+/* Add this to your index.css or App.css for additional styling */
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Line clamp utility */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Gold color utilities for deluxe rooms */
+.bg-gold-100 {
+  background-color: #fef3c7;
+}
+
+.text-gold-800 {
+  color: #92400e;
+}
+
+.border-gold-200 {
+  border-color: #fde68a;
+}
+
+/* Smooth transitions */
+* {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Loading animation enhancement */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Image hover effects */
+.group:hover .group-hover\:scale-105 {
+  transform: scale(1.05);
+}
+
+/* Button hover effects */
+.btn-primary {
+  @apply bg-blue-600 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:bg-blue-700 hover:shadow-lg transform hover:scale-105;
+}
+
+.btn-secondary {
+  @apply border border-gray-300 text-gray-700 px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:bg-gray-50 hover:shadow-md;
+}
+
+/* Card hover effects */
+.card-hover {
+  @apply transform transition-all duration-300 hover:scale-105 hover:shadow-xl;
+}
+
+/* Backdrop blur support */
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px);
+}
+
+/* Custom gradient backgrounds */
+.gradient-blue {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-gold {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+/* Responsive text sizing */
+@media (max-width: 640px) {
+  .responsive-text-4xl {
+    font-size: 2.5rem;
+  }
+  
+  .responsive-text-3xl {
+    font-size: 2rem;
+  }
+  
+  .responsive-text-2xl {
+    font-size: 1.5rem;
+  }
+}
+
+/* Custom focus states */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+}
+
+/* Image loading placeholder */
+.image-placeholder {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

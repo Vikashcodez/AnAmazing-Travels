@@ -15,6 +15,8 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import Footer from './components/Footer';
 import DestinationsPage from './pages/Destination';
+import Hotelpage from './pages/Hotel'
+import GalleryPage from './pages/Gallery';
 
 function App() {
   return (
@@ -33,6 +35,8 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/destinations" element={<DestinationsPage />} />
+            <Route path="/hotels" element={<Hotelpage />} />
+            <Route path="/gallery" element={<GalleryPage />} />
             <Route 
               path="/admin" 
               element={
