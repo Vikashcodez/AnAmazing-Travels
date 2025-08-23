@@ -129,7 +129,7 @@ const enquiryAPI = {
     try {
       const response = await axios.get('http://localhost:5000/api/enquiries');
       console.log("Raw API response:", response.data);
-      
+
       // Extract enquiries from the correct field
       return {
         success: true,
@@ -137,10 +137,10 @@ const enquiryAPI = {
       };
     } catch (error) {
       console.error('Error fetching enquiries:', error);
-      return { 
-        success: false, 
+      return {
+        success: false,
         message: error.response?.data?.message || 'Failed to fetch enquiries',
-        data: [] 
+        data: []
       };
     }
   },
@@ -160,7 +160,7 @@ const bookingAPI = {
   getAllBookings: async () => {
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('authToken');
-      
+
       if (!token) {
         throw new Error('No authentication token found');
       }
@@ -171,7 +171,7 @@ const bookingAPI = {
           'Content-Type': 'application/json'
         }
       });
-      
+
       // Map the backend data to frontend expected format
       const bookings = response.data.data.map(booking => ({
         ...booking,
@@ -185,17 +185,17 @@ const bookingAPI = {
           email: booking.userId.email
         } : null
       }));
-      
-      return { 
-        success: true, 
-        data: bookings 
+
+      return {
+        success: true,
+        data: bookings
       };
     } catch (error) {
       console.error('Error fetching bookings:', error);
-      return { 
-        success: false, 
+      return {
+        success: false,
         message: error.response?.data?.message || 'Failed to fetch bookings',
-        data: [] 
+        data: []
       };
     }
   },
@@ -203,7 +203,7 @@ const bookingAPI = {
   updateBookingStatus: async (id, status) => {
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('authToken');
-      
+
       if (!token) {
         throw new Error('No authentication token found');
       }
@@ -218,7 +218,7 @@ const bookingAPI = {
           }
         }
       );
-      
+
       return response.data;
     } catch (error) {
       console.error('Error updating booking status:', error);
@@ -229,7 +229,7 @@ const bookingAPI = {
   updatePaymentStatus: async (id, paymentStatus) => {
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('authToken');
-      
+
       if (!token) {
         throw new Error('No authentication token found');
       }
@@ -244,7 +244,7 @@ const bookingAPI = {
           }
         }
       );
-      
+
       return response.data;
     } catch (error) {
       console.error('Error updating payment status:', error);
@@ -255,7 +255,7 @@ const bookingAPI = {
   deleteBooking: async (id) => {
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('authToken');
-      
+
       if (!token) {
         throw new Error('No authentication token found');
       }
@@ -269,7 +269,7 @@ const bookingAPI = {
           }
         }
       );
-      
+
       return response.data;
     } catch (error) {
       console.error('Error deleting booking:', error);
@@ -322,6 +322,46 @@ const hotelAPI = {
       return response.data;
     } catch (error) {
       console.error('Error deleting room:', error);
+      return { success: false };
+    }
+  }
+};
+//Gallery Api
+const galleryAPI = {
+  getAllGalleryItems: async (page = 1, limit = 12, type = 'all') => {
+    try {
+      const typeParam = type !== 'all' ? `&type=${type}` : '';
+      const response = await axios.get(`http://localhost:5000/api/gallery?page=${page}&limit=${limit}${typeParam}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching gallery:', error);
+      return { success: false, data: [], totalPages: 1 };
+    }
+  },
+  uploadGalleryItems: async (formData) => {
+    try {
+      const response = await axios.post('http://localhost:5000/api/gallery/upload', formData);
+      return response.data;
+    } catch (error) {
+      console.error('Error uploading gallery items:', error);
+      return { success: false };
+    }
+  },
+  updateGalleryItem: async (id, title) => {
+    try {
+      const response = await axios.put(`http://localhost: 5000/api/gallery/${id}`, { title });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating gallery item:', error);
+      return { success: false };
+    }
+  },
+  deleteGalleryItem: async (id) => {
+    try {
+      const response = await axios.delete(`http://localhost:5000/api/gallery/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting gallery item:', error);
       return { success: false };
     }
   }
@@ -875,7 +915,7 @@ const LocationForm = ({ location: editLocation, onSubmit, onCancel }) => {
         ...prev,
         thumbnail: file
       }));
-      
+
       // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -890,19 +930,19 @@ const LocationForm = ({ location: editLocation, onSubmit, onCancel }) => {
       alert('Please fill in all required fields');
       return;
     }
-    
+
     if (!editLocation && !formData.thumbnail) {
       alert('Please select a thumbnail image');
       return;
     }
-    
+
     setLoading(true);
 
     const formDataToSend = new FormData();
     formDataToSend.append('destinationName', formData.destinationName);
     formDataToSend.append('description', formData.description);
     formDataToSend.append('category', formData.category);
-    
+
     if (formData.thumbnail) {
       formDataToSend.append('thumbnail', formData.thumbnail);
     }
@@ -1136,9 +1176,9 @@ const HotelForm = ({ hotel: editHotel, onSubmit, onCancel }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!formData.hotelName || !formData.hotelLocation || !formData.locationLink || 
-        !formData.hotelAddress || !formData.description) {
+
+    if (!formData.hotelName || !formData.hotelLocation || !formData.locationLink ||
+      !formData.hotelAddress || !formData.description) {
       showMessage('error', 'Please fill all hotel details');
       return;
     }
@@ -1162,7 +1202,7 @@ const HotelForm = ({ hotel: editHotel, onSubmit, onCancel }) => {
       formDataToSend.append('locationLink', formData.locationLink);
       formDataToSend.append('hotelAddress', formData.hotelAddress);
       formDataToSend.append('description', formData.description);
-      
+
       if (formData.hotelImage) {
         formDataToSend.append('hotelImage', formData.hotelImage);
       }
@@ -1567,13 +1607,13 @@ const HotelRooms = ({ hotel, onDeleteRoom, onAddRoom, onBack }) => {
       formData.append('bedType', roomForm.bedType);
       formData.append('acType', roomForm.acType);
       formData.append('price', roomForm.price);
-      
+
       roomForm.images.forEach(image => {
         formData.append('roomImages', image);
       });
 
       await onAddRoom(hotel._id, formData);
-      
+
       setRoomForm({
         roomType: 'normal',
         bedType: 'single',
@@ -1581,7 +1621,7 @@ const HotelRooms = ({ hotel, onDeleteRoom, onAddRoom, onBack }) => {
         price: '',
         images: []
       });
-      
+
       showMessage('success', 'Room added successfully');
     } catch (error) {
       console.error('Error adding room:', error);
@@ -1593,7 +1633,7 @@ const HotelRooms = ({ hotel, onDeleteRoom, onAddRoom, onBack }) => {
 
   const handleDeleteRoom = async (roomId) => {
     if (!window.confirm('Are you sure you want to delete this room?')) return;
-    
+
     try {
       await onDeleteRoom(hotel._id, roomId);
       showMessage('success', 'Room deleted successfully');
@@ -2142,13 +2182,13 @@ const EnquiryList = ({ enquiries = [], onDelete }) => {
                       {enquiry.phone || 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
-                      {Array.isArray(enquiry.destinations) 
-                        ? enquiry.destinations.join(', ') 
+                      {Array.isArray(enquiry.destinations)
+                        ? enquiry.destinations.join(', ')
                         : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {enquiry.travelDate 
-                        ? new Date(enquiry.travelDate).toLocaleDateString() 
+                      {enquiry.travelDate
+                        ? new Date(enquiry.travelDate).toLocaleDateString()
                         : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -2230,7 +2270,7 @@ const BookingList = ({ bookings, onStatusUpdate, onDelete }) => {
 
   const getStatusColor = (status) => {
     if (!status) return 'bg-gray-100 text-gray-800';
-    
+
     switch (status.toLowerCase()) {
       case 'confirmed':
         return 'bg-green-100 text-green-800';
@@ -2374,6 +2414,235 @@ const BookingList = ({ bookings, onStatusUpdate, onDelete }) => {
     </div>
   );
 };
+// Gallery Add View Component
+const GalleryAddView = ({
+  handleFileSelection,
+  uploadFiles,
+  updateFileTitle,
+  removeFile,
+  handleGalleryUpload,
+  galleryLoading,
+  setCurrentView
+}) => (
+  <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="flex items-center justify-between mb-6">
+      <h2 className="text-2xl font-bold text-gray-800">Add Pictures & Videos</h2>
+      <button
+        onClick={() => setCurrentView('dashboard')}
+        className="text-gray-500 hover:text-gray-700"
+      >
+        <X size={24} />
+      </button>
+    </div>
+
+    <div className="mb-6">
+      <label className="block w-full">
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-gray-400 transition-colors">
+          <Plus className="mx-auto mb-4 text-gray-400" size={48} />
+          <p className="text-lg text-gray-600">Click to select files or drag and drop</p>
+          <p className="text-sm text-gray-500 mt-2">Supports images and videos (Max 50MB each)</p>
+        </div>
+        <input
+          type="file"
+          multiple
+          accept="image/*,video/*"
+          onChange={handleFileSelection}
+          className="hidden"
+        />
+      </label>
+    </div>
+
+    {uploadFiles.length > 0 && (
+      <div className="space-y-4 mb-6">
+        <h3 className="text-lg font-semibold">Selected Files ({uploadFiles.length})</h3>
+        <div className="grid gap-4 max-h-96 overflow-y-auto">
+          {uploadFiles.map((fileObj) => (
+            <div key={fileObj.id} className="flex items-center gap-4 p-4 border rounded-lg">
+              <div className="flex-shrink-0">
+                {fileObj.file.type.startsWith('image/') ? (
+                  <img
+                    src={fileObj.preview}
+                    alt="Preview"
+                    className="w-16 h-16 object-cover rounded"
+                  />
+                ) : (
+                  <video
+                    src={fileObj.preview}
+                    className="w-16 h-16 object-cover rounded"
+                    muted
+                  />
+                )}
+              </div>
+              <div className="flex-grow">
+                <p className="font-medium text-gray-700">{fileObj.file.name}</p>
+                <p className="text-sm text-gray-500">
+                  {(fileObj.file.size / 1024 / 1024).toFixed(2)} MB
+                </p>
+                <input
+                  type="text"
+                  placeholder="Enter title for this file"
+                  value={fileObj.title}
+                  onChange={(e) => updateFileTitle(fileObj.id, e.target.value)}
+                  className="mt-2 w-full px-3 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <button
+                onClick={() => removeFile(fileObj.id)}
+                className="text-red-500 hover:text-red-700"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {uploadFiles.length > 0 && (
+      <button
+        onClick={handleGalleryUpload}
+        disabled={galleryLoading}
+        className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-blue-300 transition-colors"
+      >
+        {galleryLoading ? 'Uploading...' : `Upload ${uploadFiles.length} File(s)`}
+      </button>
+    )}
+  </div>
+);
+
+// Gallery View Component
+const GalleryView = () => (
+  <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="flex items-center justify-between mb-6">
+      <h2 className="text-2xl font-bold text-gray-800">Gallery Items</h2>
+      <button
+        onClick={() => setCurrentView('dashboard')}
+        className="text-gray-500 hover:text-gray-700"
+      >
+        <X size={24} />
+      </button>
+    </div>
+
+    <div className="flex gap-4 mb-6">
+      <select
+        value={galleryFilterType}
+        onChange={(e) => {
+          setGalleryFilterType(e.target.value);
+          setCurrentGalleryPage(1);
+          loadGalleryItems();
+        }}
+        className="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <option value="all">All Files</option>
+        <option value="image">Images Only</option>
+        <option value="video">Videos Only</option>
+      </select>
+    </div>
+
+    {galleryLoading ? (
+      <div className="text-center py-8">Loading...</div>
+    ) : (
+      <>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+          {galleryItems.map((item) => (
+            <div key={item._id} className="border rounded-lg overflow-hidden">
+              <div className="aspect-video bg-gray-100 relative">
+                {item.fileType === 'image' ? (
+                  <img
+                    src={`http://localhost:5000/api/gallery/file/${item.fileName}`}
+                    alt={item.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <video
+                    src={`http://localhost:5000/api/gallery/file/${item.fileName}`}
+                    className="w-full h-full object-cover"
+                    controls
+                  />
+                )}
+              </div>
+              <div className="p-4">
+                {editingGalleryItem === item._id ? (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      defaultValue={item.title}
+                      className="flex-grow px-2 py-1 border rounded"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          handleGalleryUpdate(item._id, e.target.value);
+                        }
+                      }}
+                      id={`edit-${item._id}`}
+                    />
+                    <button
+                      onClick={() => {
+                        const input = document.getElementById(`edit-${item._id}`);
+                        handleGalleryUpdate(item._id, input.value);
+                      }}
+                      className="text-green-600 hover:text-green-800"
+                    >
+                      <Save size={18} />
+                    </button>
+                    <button
+                      onClick={() => setEditingGalleryItem(null)}
+                      className="text-gray-600 hover:text-gray-800"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <h3 className="font-semibold text-gray-800 mb-2">{item.title}</h3>
+                    <p className="text-sm text-gray-500 mb-3">
+                      {item.fileType.toUpperCase()} • {(item.fileSize / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setEditingGalleryItem(item._id)}
+                        className="flex items-center gap-1 px-3 py-1 text-blue-600 border border-blue-600 rounded hover:bg-blue-50"
+                      >
+                        <Edit2 size={16} />
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleGalleryDelete(item._id)}
+                        className="flex items-center gap-1 px-3 py-1 text-red-600 border border-red-600 rounded hover:bg-red-50"
+                      >
+                        <Trash2 size={16} />
+                        Delete
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {totalGalleryPages > 1 && (
+          <div className="flex justify-center gap-2">
+            {Array.from({ length: totalGalleryPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => {
+                  setCurrentGalleryPage(page);
+                  loadGalleryItems();
+                }}
+                className={`px-3 py-1 rounded ${currentGalleryPage === page
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+              >
+                {page}
+              </button>
+            ))}
+          </div>
+        )}
+      </>
+    )}
+  </div>
+);
 
 // Main Admin Dashboard Component
 const AdminDashboard = () => {
@@ -2413,6 +2682,17 @@ const AdminDashboard = () => {
   // Booking management state
   const [bookings, setBookings] = useState([]);
   const [bookingLoading, setBookingLoading] = useState(false);
+
+  //gallery mangement
+  const [galleryItems, setGalleryItems] = useState([]);
+  const [galleryLoading, setGalleryLoading] = useState(false);
+  const [uploadFiles, setUploadFiles] = useState([]);
+  const [editingGalleryItem, setEditingGalleryItem] = useState(null);
+  const [currentGalleryPage, setCurrentGalleryPage] = useState(1);
+  const [totalGalleryPages, setTotalGalleryPages] = useState(1);
+  const [galleryFilterType, setGalleryFilterType] = useState('all');
+
+
 
   // Existing user functionality
   const fetchUsers = async () => {
@@ -2727,28 +3007,28 @@ const AdminDashboard = () => {
   };
 
   // Enquiry management functions
- const loadEnquiries = async () => {
-  setEnquiryLoading(true);
-  try {
-    const response = await enquiryAPI.getAllEnquiries();
-    console.log("Processed response:", response);
-    
-    if (response.success) {
-      if (response.data.length === 0) {
-        console.warn("No enquiries found (empty array)");
+  const loadEnquiries = async () => {
+    setEnquiryLoading(true);
+    try {
+      const response = await enquiryAPI.getAllEnquiries();
+      console.log("Processed response:", response);
+
+      if (response.success) {
+        if (response.data.length === 0) {
+          console.warn("No enquiries found (empty array)");
+        }
+        setEnquiries(response.data);
+      } else {
+        console.error("API Error:", response.message);
+        alert(response.message);
       }
-      setEnquiries(response.data);
-    } else {
-      console.error("API Error:", response.message);
-      alert(response.message);
+    } catch (error) {
+      console.error("Error:", error);
+      alert('Failed to load enquiries');
+    } finally {
+      setEnquiryLoading(false);
     }
-  } catch (error) {
-    console.error("Error:", error);
-    alert('Failed to load enquiries');
-  } finally {
-    setEnquiryLoading(false);
-  }
-};
+  };
 
   const handleDeleteEnquiry = async (id) => {
     try {
@@ -2764,6 +3044,115 @@ const AdminDashboard = () => {
       alert('Error deleting enquiry. Please try again.');
     }
   };
+
+  // Gallery management functions 
+  const loadGalleryItems = async () => {
+    setGalleryLoading(true);
+    try {
+      const response = await galleryAPI.getAllGalleryItems(currentGalleryPage, 12, galleryFilterType);
+      if (response.success) {
+        setGalleryItems(response.data || []);
+        setTotalGalleryPages(response.totalPages || 1);
+      }
+    } catch (error) {
+      console.error('Error loading gallery items:', error);
+    } finally {
+      setGalleryLoading(false);
+    }
+  };
+
+  const handleFileSelection = (event) => {
+    const files = Array.from(event.target.files);
+    const fileObjects = files.map((file, index) => ({
+      id: Date.now() + index,
+      file: file,
+      title: '',
+      preview: URL.createObjectURL(file)
+    }));
+    setUploadFiles(prev => [...prev, ...fileObjects]);
+  };
+
+  const updateFileTitle = (id, title) => {
+    setUploadFiles(prev =>
+      prev.map(file => file.id === id ? { ...file, title } : file)
+    );
+  };
+
+  const removeFile = (id) => {
+    setUploadFiles(prev => {
+      const fileToRemove = prev.find(file => file.id === id);
+      if (fileToRemove) {
+        URL.revokeObjectURL(fileToRemove.preview);
+      }
+      return prev.filter(file => file.id !== id);
+    });
+  };
+
+  const handleGalleryUpload = async () => {
+    if (uploadFiles.length === 0) return;
+
+    const formData = new FormData();
+
+    uploadFiles.forEach((fileObj) => {
+      formData.append('files', fileObj.file);
+      formData.append('titles', fileObj.title || fileObj.file.name);
+    });
+
+    setGalleryLoading(true);
+    try {
+      const response = await galleryAPI.uploadGalleryItems(formData);
+      if (response.success) {
+        alert('Files uploaded successfully!');
+        // Clean up preview URLs
+        uploadFiles.forEach(fileObj => URL.revokeObjectURL(fileObj.preview));
+        setUploadFiles([]);
+        loadGalleryItems();
+        setCurrentView('gallery-view');
+      } else {
+        alert(response.message || 'Upload failed');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('Upload failed');
+    } finally {
+      setGalleryLoading(false);
+    }
+  };
+
+  const handleGalleryDelete = async (id) => {
+    if (!confirm('Are you sure you want to delete this item?')) return;
+
+    try {
+      const response = await galleryAPI.deleteGalleryItem(id);
+      if (response.success) {
+        alert('Item deleted successfully!');
+        loadGalleryItems();
+      } else {
+        alert('Delete failed');
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      alert('Delete failed');
+    }
+  };
+
+  const handleGalleryUpdate = async (id, title) => {
+    try {
+      const response = await galleryAPI.updateGalleryItem(id, title);
+      if (response.success) {
+        alert('Item updated successfully!');
+        setEditingGalleryItem(null);
+        loadGalleryItems();
+      } else {
+        alert('Update failed');
+      }
+    } catch (error) {
+      console.error('Update error:', error);
+      alert('Update failed');
+    }
+  };
+
+
 
   // Booking management functions
   const loadBookings = async () => {
@@ -2856,6 +3245,8 @@ const AdminDashboard = () => {
     setSelectedHotel(hotel);
     setCurrentView('hotel-rooms');
   };
+
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -3011,6 +3402,34 @@ const AdminDashboard = () => {
                       <Eye size={16} />
                       View Enquiries
                     </button>
+                  </div>
+
+                  {/* Gallery Management Card */}
+                  <div className="bg-teal-50 p-6 rounded-lg border border-teal-200">
+                    <div className="flex items-center mb-4">
+                      <Upload size={24} className="text-teal-600 mr-3" />
+                      <h3 className="text-lg font-semibold text-gray-800">Gallery Management</h3>
+                    </div>
+                    <p className="text-gray-600 mb-4">Add and manage gallery images and videos</p>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => setCurrentView('gallery-add')}
+                        className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded transition-colors flex items-center gap-2 justify-center"
+                      >
+                        <Plus size={16} />
+                        Add Media
+                      </button>
+                      <button
+                        onClick={() => {
+                          setCurrentView('gallery-view');
+                          loadGalleryItems();
+                        }}
+                        className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded transition-colors flex items-center gap-2 justify-center"
+                      >
+                        <Eye size={16} />
+                        View Gallery
+                      </button>
+                    </div>
                   </div>
 
                   {/* Booking Management Card */}
@@ -3252,6 +3671,7 @@ const AdminDashboard = () => {
               </>
             )}
 
+
             {/* Enquiry Views */}
             {enquiryLoading ? (
               <div className="flex justify-center items-center h-64">
@@ -3264,6 +3684,29 @@ const AdminDashboard = () => {
                   onDelete={handleDeleteEnquiry}
                 />
               )
+            )}
+
+
+            {galleryLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="text-xl text-gray-600">Loading gallery...</div>
+              </div>
+            ) : (
+              <>
+               
+                {currentView === 'gallery-add' && (
+                  <GalleryAddView
+                    handleFileSelection={handleFileSelection}
+                    uploadFiles={uploadFiles}
+                    updateFileTitle={updateFileTitle}
+                    removeFile={removeFile}
+                    handleGalleryUpload={handleGalleryUpload}
+                    galleryLoading={galleryLoading}
+                    setCurrentView={setCurrentView}
+                  />
+                )}
+                {currentView === 'gallery-view' && <GalleryView />}
+              </>
             )}
 
             {/* Booking Views */}
