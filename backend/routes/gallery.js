@@ -187,13 +187,12 @@ router.delete('/:id', async (req, res) => {
 // GET - Serve uploaded files
 router.get('/file/:filename', (req, res) => {
   const filename = req.params.filename;
-  const filePath = path.join(__dirname, '..', uploadsDir, filename);
-  
+  const filePath = path.join(__dirname, '..', 'uploads', 'gallery', filename);
+  console.log('Serving file:', filePath, fs.existsSync(filePath));
   if (fs.existsSync(filePath)) {
     res.sendFile(path.resolve(filePath));
   } else {
     res.status(404).json({ message: 'File not found' });
   }
 });
-
 module.exports = router;

@@ -15,13 +15,15 @@ const GalleryDisplayPage = () => {
     setLoading(true);
     try {
       const typeParam = filterType !== 'all' ? `&type=${filterType}` : '';
-      const response = await fetch(`/api/gallery?page=${currentPage}&limit=20${typeParam}`);
+      const response = await fetch(`http://localhost:5000/api/gallery?page=${currentPage}&limit=20${typeParam}`);
       const data = await response.json();
       
       if (response.ok) {
         setGalleryItems(data.data || []);
         setFilteredItems(data.data || []);
         setTotalPages(data.totalPages || 1);
+      } else {
+        console.error('Failed to fetch gallery items:', data.message);
       }
     } catch (error) {
       console.error('Error fetching gallery:', error);
@@ -68,6 +70,18 @@ const GalleryDisplayPage = () => {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [selectedItem, filteredItems]);
 
+  // Format date function
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Unknown date';
+    
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString();
+    } catch (error) {
+      return 'Invalid date';
+    }
+  };
+
   // Lightbox modal
   const renderLightbox = () => {
     if (!selectedItem) return null;
@@ -106,13 +120,20 @@ const GalleryDisplayPage = () => {
                 src={`/api/gallery/file/${selectedItem.fileName}`}
                 alt={selectedItem.title}
                 className="max-h-[80vh] max-w-full object-contain"
+                onError={(e) => {
+                  e.target.src = 'https://via.placeholder.com/500x300?text=Image+Not+Found';
+                }}
               />
             ) : (
               <video
-                src={`/api/gallery/file/${selectedItem.fileName}`}
+                src={`http://localhost:5000/api/gallery/file/${selectedItem.fileName}`}
                 controls
                 autoPlay
                 className="max-h-[80vh] max-w-full"
+                onError={(e) => {
+                  e.target.src = '';
+                  console.error('Error loading video');
+                }}
               >
                 Your browser does not support the video tag.
               </video>
@@ -123,7 +144,7 @@ const GalleryDisplayPage = () => {
               <h3 className="text-white text-xl font-semibold">{selectedItem.title}</h3>
               <p className="text-gray-300 text-sm mt-1">
                 {selectedItem.fileType.toUpperCase()} • 
-                {new Date(selectedItem.uploadDate).toLocaleDateString()}
+                {formatDate(selectedItem.uploadDate)}
               </p>
             </div>
           </div>
@@ -224,13 +245,23 @@ const GalleryDisplayPage = () => {
                         src={`/api/gallery/file/${item.fileName}`}
                         alt={item.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        onError={(e) => {
+                          e.target.src = 'https://via.placeholder.com/300x200?text=Image+Not+Found';
+                        }}
                       />
                     ) : (
                       <>
                         <video
-                          src={`/api/gallery/file/${item.fileName}`}
+                          src={`http://localhost:5000/api/gallery/file/${item.fileName}`}
                           className="w-full h-full object-cover"
                           muted
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            const placeholder = document.createElement('div');
+                            placeholder.className = 'w-full h-full bg-gray-200 flex items-center justify-center';
+                            placeholder.innerHTML = '<div class="text-gray-500">Video not available</div>';
+                            e.target.parentNode.appendChild(placeholder);
+                          }}
                         />
                         <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
                           <Play size={32} className="text-white opacity-80" />
@@ -256,7 +287,7 @@ const GalleryDisplayPage = () => {
                       {item.title}
                     </h3>
                     <p className="text-xs text-gray-500 mt-1">
-                      {new Date(item.uploadDate).toLocaleDateString()}
+                      {formatDate(item.uploadDate)}
                     </p>
                   </div>
                 </div>

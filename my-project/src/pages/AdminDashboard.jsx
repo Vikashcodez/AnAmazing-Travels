@@ -2511,138 +2511,196 @@ const GalleryAddView = ({
 );
 
 // Gallery View Component
-const GalleryView = () => (
-  <div className="bg-white rounded-lg shadow-md p-6">
-    <div className="flex items-center justify-between mb-6">
-      <h2 className="text-2xl font-bold text-gray-800">Gallery Items</h2>
-      <button
-        onClick={() => setCurrentView('dashboard')}
-        className="text-gray-500 hover:text-gray-700"
-      >
-        <X size={24} />
-      </button>
-    </div>
+// Gallery View Component
+// Gallery View Component
+const GalleryView = ({
+  galleryItems,
+  galleryLoading,
+  galleryFilterType,
+  setGalleryFilterType,
+  currentGalleryPage,
+  setCurrentGalleryPage,
+  totalGalleryPages,
+  loadGalleryItems,
+  editingGalleryItem,
+  setEditingGalleryItem,
+  handleGalleryUpdate,
+  handleGalleryDelete,
+  setCurrentView
+}) => {
+  // Format date function (same as your gallery page)
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Unknown date';
+    
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString();
+    } catch (error) {
+      return 'Invalid date';
+    }
+  };
 
-    <div className="flex gap-4 mb-6">
-      <select
-        value={galleryFilterType}
-        onChange={(e) => {
-          setGalleryFilterType(e.target.value);
-          setCurrentGalleryPage(1);
-          loadGalleryItems();
-        }}
-        className="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-      >
-        <option value="all">All Files</option>
-        <option value="image">Images Only</option>
-        <option value="video">Videos Only</option>
-      </select>
-    </div>
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-gray-800">Gallery Items</h2>
+        <button
+          onClick={() => setCurrentView('dashboard')}
+          className="text-gray-500 hover:text-gray-700"
+        >
+          <X size={24} />
+        </button>
+      </div>
 
-    {galleryLoading ? (
-      <div className="text-center py-8">Loading...</div>
-    ) : (
-      <>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-          {galleryItems.map((item) => (
-            <div key={item._id} className="border rounded-lg overflow-hidden">
-              <div className="aspect-video bg-gray-100 relative">
-                {item.fileType === 'image' ? (
-                  <img
-                    src={`http://localhost:5000/api/gallery/file/${item.fileName}`}
-                    alt={item.title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <video
-                    src={`http://localhost:5000/api/gallery/file/${item.fileName}`}
-                    className="w-full h-full object-cover"
-                    controls
-                  />
-                )}
-              </div>
-              <div className="p-4">
-                {editingGalleryItem === item._id ? (
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      defaultValue={item.title}
-                      className="flex-grow px-2 py-1 border rounded"
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          handleGalleryUpdate(item._id, e.target.value);
-                        }
-                      }}
-                      id={`edit-${item._id}`}
-                    />
-                    <button
-                      onClick={() => {
-                        const input = document.getElementById(`edit-${item._id}`);
-                        handleGalleryUpdate(item._id, input.value);
-                      }}
-                      className="text-green-600 hover:text-green-800"
-                    >
-                      <Save size={18} />
-                    </button>
-                    <button
-                      onClick={() => setEditingGalleryItem(null)}
-                      className="text-gray-600 hover:text-gray-800"
-                    >
-                      <X size={18} />
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <h3 className="font-semibold text-gray-800 mb-2">{item.title}</h3>
-                    <p className="text-sm text-gray-500 mb-3">
-                      {item.fileType.toUpperCase()} • {(item.fileSize / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setEditingGalleryItem(item._id)}
-                        className="flex items-center gap-1 px-3 py-1 text-blue-600 border border-blue-600 rounded hover:bg-blue-50"
-                      >
-                        <Edit2 size={16} />
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleGalleryDelete(item._id)}
-                        className="flex items-center gap-1 px-3 py-1 text-red-600 border border-red-600 rounded hover:bg-red-50"
-                      >
-                        <Trash2 size={16} />
-                        Delete
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
+      <div className="flex gap-4 mb-6">
+        <select
+          value={galleryFilterType}
+          onChange={(e) => {
+            setGalleryFilterType(e.target.value);
+            setCurrentGalleryPage(1);
+            loadGalleryItems();
+          }}
+          className="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="all">All Files</option>
+          <option value="image">Images Only</option>
+          <option value="video">Videos Only</option>
+        </select>
+        
+        <button
+          onClick={loadGalleryItems}
+          className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Refresh
+        </button>
+      </div>
+
+      {galleryLoading ? (
+        <div className="text-center py-8">Loading...</div>
+      ) : (
+        <>
+          {galleryItems.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No gallery items found.</p>
             </div>
-          ))}
-        </div>
+          ) : (
+            <>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                {galleryItems.map((item) => (
+                  <div key={item._id} className="border rounded-lg overflow-hidden">
+                    <div className="aspect-video bg-gray-100 relative">
+                      {item.fileType === 'image' ? (
+                        <img
+                          src={`http://localhost:5000/api/gallery/file/${item.fileName}`}
+                          alt={item.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "/fallback-image.jpg";
+                          }}
+                        />
+                      ) : (
+                        <video
+                          src={`http://localhost:5000/api/gallery/file/${item.fileName}`}
+                          className="w-full h-full object-cover"
+                          controls
+                          onError={(e) => {
+                            e.target.onerror = null;
+                          }}
+                        >
+                          Your browser does not support the video tag.
+                        </video>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      {editingGalleryItem === item._id ? (
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            defaultValue={item.title}
+                            className="flex-grow px-2 py-1 border rounded"
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                handleGalleryUpdate(item._id, e.target.value);
+                              }
+                            }}
+                            id={`edit-${item._id}`}
+                          />
+                          <button
+                            onClick={() => {
+                              const input = document.getElementById(`edit-${item._id}`);
+                              handleGalleryUpdate(item._id, input.value);
+                            }}
+                            className="text-green-600 hover:text-green-800"
+                          >
+                            <Save size={18} />
+                          </button>
+                          <button
+                            onClick={() => setEditingGalleryItem(null)}
+                            className="text-gray-600 hover:text-gray-800"
+                          >
+                            <X size={18} />
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <h3 className="font-semibold text-gray-800 mb-2">{item.title || 'Untitled'}</h3>
+                          <p className="text-sm text-gray-500 mb-1">
+                            {item.fileType?.toUpperCase() || 'UNKNOWN'} • 
+                            {(item.fileSize / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                          <p className="text-xs text-gray-400 mb-3">
+                            {formatDate(item.uploadDate)}
+                          </p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setEditingGalleryItem(item._id)}
+                              className="flex items-center gap-1 px-3 py-1 text-blue-600 border border-blue-600 rounded hover:bg-blue-50"
+                            >
+                              <Edit2 size={16} />
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleGalleryDelete(item._id)}
+                              className="flex items-center gap-1 px-3 py-1 text-red-600 border border-red-600 rounded hover:bg-red-50"
+                            >
+                              <Trash2 size={16} />
+                              Delete
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
 
-        {totalGalleryPages > 1 && (
-          <div className="flex justify-center gap-2">
-            {Array.from({ length: totalGalleryPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => {
-                  setCurrentGalleryPage(page);
-                  loadGalleryItems();
-                }}
-                className={`px-3 py-1 rounded ${currentGalleryPage === page
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-              >
-                {page}
-              </button>
-            ))}
-          </div>
-        )}
-      </>
-    )}
-  </div>
-);
+              {totalGalleryPages > 1 && (
+                <div className="flex justify-center gap-2">
+                  {Array.from({ length: totalGalleryPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => {
+                        setCurrentGalleryPage(page);
+                        loadGalleryItems();
+                      }}
+                      className={`px-3 py-1 rounded ${currentGalleryPage === page
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+};
 
 // Main Admin Dashboard Component
 const AdminDashboard = () => {
@@ -2692,6 +2750,11 @@ const AdminDashboard = () => {
   const [totalGalleryPages, setTotalGalleryPages] = useState(1);
   const [galleryFilterType, setGalleryFilterType] = useState('all');
 
+useEffect(() => {
+  if (currentView === 'gallery-view') {
+    loadGalleryItems();
+  }
+}, [currentView, galleryFilterType, currentGalleryPage]);
 
 
   // Existing user functionality
@@ -3046,20 +3109,27 @@ const AdminDashboard = () => {
   };
 
   // Gallery management functions 
-  const loadGalleryItems = async () => {
-    setGalleryLoading(true);
-    try {
-      const response = await galleryAPI.getAllGalleryItems(currentGalleryPage, 12, galleryFilterType);
-      if (response.success) {
-        setGalleryItems(response.data || []);
-        setTotalGalleryPages(response.totalPages || 1);
-      }
-    } catch (error) {
-      console.error('Error loading gallery items:', error);
-    } finally {
-      setGalleryLoading(false);
+const loadGalleryItems = async () => {
+  setGalleryLoading(true);
+  try {
+    const response = await galleryAPI.getAllGalleryItems(currentGalleryPage, 12, galleryFilterType);
+    console.log('Gallery API response:', response); 
+    
+    // The response structure matches your gallery page: {data: Array, totalPages: number, currentPage: string, total: number}
+    if (response && Array.isArray(response.data)) {
+      setGalleryItems(response.data);
+      setTotalGalleryPages(response.totalPages || 1);
+    } else {
+      console.error('Unexpected response format:', response);
+      setGalleryItems([]);
     }
-  };
+  } catch (error) {
+    console.error('Error loading gallery items:', error);
+    setGalleryItems([]);
+  } finally {
+    setGalleryLoading(false);
+  }
+};
 
   const handleFileSelection = (event) => {
     const files = Array.from(event.target.files);
@@ -3693,7 +3763,7 @@ const AdminDashboard = () => {
               </div>
             ) : (
               <>
-               
+
                 {currentView === 'gallery-add' && (
                   <GalleryAddView
                     handleFileSelection={handleFileSelection}
@@ -3705,7 +3775,25 @@ const AdminDashboard = () => {
                     setCurrentView={setCurrentView}
                   />
                 )}
-                {currentView === 'gallery-view' && <GalleryView />}
+
+                {currentView === 'gallery-view' && (
+                  <GalleryView
+                    galleryItems={galleryItems}
+                    galleryLoading={galleryLoading}
+                    galleryFilterType={galleryFilterType}
+                    setGalleryFilterType={setGalleryFilterType}
+                    currentGalleryPage={currentGalleryPage}
+                    setCurrentGalleryPage={setCurrentGalleryPage}
+                    totalGalleryPages={totalGalleryPages}
+                    loadGalleryItems={loadGalleryItems}
+                    editingGalleryItem={editingGalleryItem}
+                    setEditingGalleryItem={setEditingGalleryItem}
+                    handleGalleryUpdate={handleGalleryUpdate}
+                    handleGalleryDelete={handleGalleryDelete}
+                    setCurrentView={setCurrentView}
+                  />
+                )}
+
               </>
             )}
 
